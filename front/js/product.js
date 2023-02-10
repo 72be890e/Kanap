@@ -14,6 +14,8 @@
         let present = false;
         let orderInfo = collectOrderInfo();
 
+        if (orderInfo.color == "") return;
+
         if (cart = localStorage.getItem("cart"), cart) {
             let items = JSON.parse(cart)
 
