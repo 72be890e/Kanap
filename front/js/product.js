@@ -24,6 +24,10 @@
                     item.color == orderInfo.color
                 ) {
                     present = true;
+                    if (items[i].quantity + orderInfo.quantity > 100) {
+                        alert("Out of stock")
+                        return
+                    }
                     items[i].quantity += orderInfo.quantity
                 }
             }
@@ -34,6 +38,10 @@
 
             localStorage.setItem("cart", JSON.stringify(items))
         } else {
+            if (orderInfo.quantity > 100) {
+                alert("Out of stock")
+                return
+            }
             localStorage.setItem("cart", JSON.stringify([orderInfo]))
         }
     }
