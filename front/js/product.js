@@ -12,6 +12,8 @@
         let article = document.querySelector("article")
 
         fillImage(article, productContent)
+        fillProductInfo(productContent)
+        fillColorSelect(productContent)
     }
 
     const fillImage = function (article, product) {
@@ -27,6 +29,24 @@
     const fillProductInfo = function(product) {
         let title = document.getElementById("title");
         let price = document.getElementById("price");
-        let description = document.getElementById(description)
+        let description = document.getElementById("description")
+
+        title.innerText = product.name
+        price.innerText = product.price
+        description.innerText = product.description
     }
+
+    const fillColorSelect = function (product) {
+        let colorSelect = document.getElementById("colors")
+        let colorsElement = product.colors.map(color => {
+            let option = document.createElement("option")
+            option.setAttribute("value", color)
+            option.innerText = color
+            return option
+        })
+
+        colorSelect.append(...colorsElement)
+    }
+
+    fillProduct()
 }())
