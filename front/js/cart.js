@@ -1,6 +1,30 @@
 (function () {
     window.__products = {};
+
     const BASE_URL = "http://localhost:3000/api/products"
+    const ValidationTable = {
+        firstName: {
+            field: "firstNameErrorMsg",
+            message: "Entrez un prénom valide."
+        },
+        lastName: {
+            field: "lastNameErrorMsg",
+            message: "Entrez un nom de famille valide."
+        },
+        address: {
+            field: "addressErrorMsg",
+            message: "Entrez une adresse valide."
+        },
+        city: {
+            field: "cityErrorMsg",
+            message: "Entrez une ville valide."
+        },
+        email: {
+            regex: /^[A-Za-z0-9+.-]+@[a-z]+\.[a-z]{2,3}/,
+            field: "firstNameErrorMsg",
+            message: "Adresse email invalide."
+        },
+    };
 
     const loadAllProducts = async function () {
         let response = await fetch(BASE_URL);
@@ -20,6 +44,45 @@
         }
         // what if?
     }
+
+    const getInputValue = function (elementID) {
+        return document.getElementById(elementID).value
+    }
+
+    const modifyCartContent = function (newQuantity, productID, color) {
+        let cartItems = getCartContent();
+
+        for (let i = 0; i < cartItems.length; i++) {
+            let item = cartItems[i];
+
+            if (
+                item.productID == productID &&
+                item.color == color &&
+                newQuantity < 100
+            ) {
+                item.quantity = newQuantity
+                cartItems[i] = item
+                localStorage.setItem("cart", JSON.stringify(cartItems))
+            }
+        }
+    }
+
+    const deleteItem = function (productID, color) {
+        let cartItems = getCartContent();
+
+        for (let i = 0; i < cartItems.length; i++) {
+            let item = cartItems[i];
+
+            if (
+                item.productID == productID &&
+                item.color == color
+            ) {
+                cartItems.splice(i, 1)
+                localStorage.setItem("cart", JSON.stringify(cartItems))
+            }
+        }
+    }
+
 
     const buildArticle = function (product, orderInfo) {
         let container = document.createElement("article");
@@ -61,7 +124,7 @@
             container.classList.add("cart__item__content__description");
             title.innerText = product.name;
             color.innerText = orderInfo.color;
-            price.innerText = product.price;
+            price.innerText = `${product.price},00 €`;
 
             container.append(
                 title,
@@ -71,6 +134,7 @@
 
             return container;
         }
+
         let contentSettings = () => {
             let containerSettings = document.createElement("div");
             let containerQty = document.createElement("div");
@@ -114,6 +178,7 @@
 
             return containerSettings;
         }
+
         let container = document.createElement("div");
         let description = contentDescription();
         let settings = contentSettings();
@@ -128,14 +193,14 @@
         return container;
     }
 
-    const calculateQuantity  = function () {
+    const calculateQuantity = function () {
         let totalQuantity = document.getElementById("totalQuantity");
         let totalPrice = document.getElementById("totalPrice");
         let cart = getCartContent();
 
         let rawQuantity = 0;
         let rawPrice = 0;
-        
+
         for (let i = 0; i < cart.length; i++) {
             const item = cart[i];
             const product = window.__products[item.productID];
@@ -145,10 +210,104 @@
         }
 
         totalQuantity.innerText = rawQuantity;
-        totalPrice.innerText = rawPrice;
+        totalPrice.innerText = `${rawPrice},00`;
+    }
+
+    const getContactDetails = function () {
+        return {
+            firstName: getInputValue("firstName"),
+            lastName: getInputValue("lastName"),
+            address: getInputValue("address"),
+            city: getInputValue("city"),
+            email: getInputValue("email")
+        };
+    };
+
+    const validDetails = function (contact) {
+        let valid = true;
+        const showMessage = function (elementID, message) {
+            document.getElementById(elementID).innerText = message
+        }
+
+        for (let entry in ValidationTable) {
+            let field = contact[element];
+            let element = ValidationTable[entry];
+
+            if (field === '' || !(element.regex && element.regex.test(field))) {
+                showMessage(element.field, element.message)
+                valid = false;
+            }
+        }
+
+        return valid
+    }
+
+    const orderCallback = function () {
+        let contact = getContactDetails();
+
+        if (!validDetails(contact)) return
+
+
+    }
+
+
+    const changeCallback = function (event) {
+        let closest = event.target.closest(".cart__item");
+        let productID = closest.getAttribute("data-id");
+        let color = closest.getAttribute("data-color");
+
+        modifyCartContent(parseInt(event.target.value, 10), productID, color);
+        // update DOM
+        calculateQuantity();
+    }
+
+    const deleteCallback = function (event) {
+        let closest = event.target.closest(".cart__item");
+        let productID = closest.getAttribute("data-id");
+        let color = closest.getAttribute("data-color");
+
+        deleteItem(productID, color);
+        // delete article from DOM
+        closest.remove();
+        // update DOM
+        calculateQuantity();
+    }
+
+    const setupListeners = function () {
+        let elements = document.getElementsByClassName('itemQuantity');
+        let deleteElements = document.getElementsByClassName('deleteItem');
+        let orderButton = document.getElementById("order");
+
+        orderButton.addEventListener("click", orderCallback)
+
+        for (let i = 0; i < elements.length; i++) {
+            let element = elements[i];
+
+            element.addEventListener('change', changeCallback);
+        }
+
+        for (let i = 0; i < deleteElements.length; i++) {
+            let element = deleteElements[i];
+
+            element.addEventListener('click', deleteCallback);
+        }
     }
 
     loadAllProducts().then(() => {
+        let cart = document.getElementById("cart__items");
+        let cartContent = getCartContent();
+        let cartElements = [];
 
+        for (let i = 0; i < cartContent.length; i++) {
+            let order = cartContent[i];
+            let product = window.__products[order.productID];
+
+            cartElements.push(buildArticle(product, order))
+        }
+
+        cart.append(...cartElements)
+
+        setupListeners()
+        calculateQuantity()
     })
 }())
