@@ -2,6 +2,7 @@
     window.__products = {};
 
     const BASE_URL = "http://localhost:3000/api/products"
+    const ORDER_URL = "http://localhost:3000/api/products/order"
     const ValidationTable = {
         firstName: {
             field: "firstNameErrorMsg",
@@ -21,7 +22,7 @@
         },
         email: {
             regex: /^[A-Za-z0-9+.-]+@[a-z]+\.[a-z]{2,3}/,
-            field: "firstNameErrorMsg",
+            field: "emailErrorMsg",
             message: "Adresse email invalide."
         },
     };
@@ -35,7 +36,7 @@
             window.__products[item._id] = item;
         }
     }
-
+    
     const getCartContent = function () {
         let cart;
 
@@ -43,6 +44,8 @@
             return JSON.parse(cart);
         }
         // what if?
+        // add error message
+
     }
 
     const getInputValue = function (elementID) {
@@ -230,24 +233,46 @@
         }
 
         for (let entry in ValidationTable) {
-            let field = contact[element];
+            let field = contact[entry];
             let element = ValidationTable[entry];
 
-            if (field === '' || !(element.regex && element.regex.test(field))) {
+
+            if (field === '' || element.regex && !element.regex.test(field) ) {
                 showMessage(element.field, element.message)
                 valid = false;
+            } else {
+                showMessage(element.field,'')
             }
         }
 
         return valid
     }
 
-    const orderCallback = function () {
+    const redirectToConfirmation = function (orderID) {
+        window.location.href = `confirmation.html?orderId=${orderID}`
+    }
+
+    const orderCallback = async function (event) {
+        event.preventDefault()
         let contact = getContactDetails();
+        let cart = getCartContent();
+        let productIDs = cart.map(product => product.productID);
 
-        if (!validDetails(contact)) return
+        if (!validDetails(contact) || productIDs.length == 0) return
 
+        let response = await fetch(ORDER_URL,{
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json"
+            },
+            body: JSON.stringify({
+                contact: contact,
+                products: productIDs
+            })
+        })
 
+        let data = await response.json()
+        redirectToConfirmation(data.orderId)
     }
 
 
@@ -279,6 +304,7 @@
         let orderButton = document.getElementById("order");
 
         orderButton.addEventListener("click", orderCallback)
+        
 
         for (let i = 0; i < elements.length; i++) {
             let element = elements[i];
