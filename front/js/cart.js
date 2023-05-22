@@ -5,23 +5,40 @@
     const ORDER_URL = "http://localhost:3000/api/products/order";
     const ValidationTable = {
         firstName: {
+            validate: function (input) {
+                // Must not match this regex
+                return !/\d/.test(input);
+            },
             field: "firstNameErrorMsg",
-            message: "Entrez un prénom valide.",
+            message: "Entrez un prénom valide. Pas de chiffre autorisé",
         },
         lastName: {
+            validate: function (input) {
+                // Must not match this regex
+                return !/\d/.test(input);
+            },
             field: "lastNameErrorMsg",
-            message: "Entrez un nom de famille valide.",
+            message: "Entrez un nom de famille valide. Pas de chiffre autorisé",
         },
         address: {
+            // no-op
+            validate: function () {
+                return true;
+            },
             field: "addressErrorMsg",
             message: "Entrez une adresse valide.",
         },
         city: {
+            validate: function () {
+                return true;
+            },
             field: "cityErrorMsg",
             message: "Entrez une ville valide.",
         },
         email: {
-            regex: /^[A-Za-z0-9+.-]+@[a-z]+\.[a-z]{2,3}/,
+            validate: function (input) {
+                return /^[A-Za-z0-9+.-]+@[a-z]+\.[a-z]{2,3}/.test(input);
+            },
             field: "emailErrorMsg",
             message: "Adresse email invalide.",
         },
@@ -260,7 +277,7 @@
             let field = contact[entry];
             let element = ValidationTable[entry];
 
-            if (field === "" || (element.regex && !element.regex.test(field))) {
+            if (field === "" || !element.validate(field)) {
                 showMessage(element.field, element.message);
                 valid = false;
             } else {
